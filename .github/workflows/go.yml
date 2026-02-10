@@ -28,3 +28,9 @@ jobs:
 
       - name: Integration Tests
         run: make test.integration
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: challenge
+          POSTGRES_PORT: "5432"
+          POSTGRES_SQL_DIR: sql

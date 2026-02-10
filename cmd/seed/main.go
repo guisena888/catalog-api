@@ -13,10 +13,8 @@ import (
 )
 
 func main() {
-	// Load environment variables from .env file
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
+	// Load environment variables from .env file if it exists
+	_ = godotenv.Load(".env")
 
 	// Initialize database connection
 	db, close := database.New(
