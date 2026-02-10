@@ -8,7 +8,7 @@ import (
 	"github.com/mytheresa/go-hiring-challenge/app/mocks"
 	"github.com/mytheresa/go-hiring-challenge/app/service"
 	apperrors "github.com/mytheresa/go-hiring-challenge/errors"
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -35,7 +35,7 @@ func TestCategoryServiceSuite(t *testing.T) {
 }
 
 func (s *CategoryServiceSuite) TestCreateCategory_Success() {
-	category := &models.Category{Code: "hats", Name: "Hats"}
+	category := &model.Category{Code: "hats", Name: "Hats"}
 
 	s.repo.EXPECT().
 		CreateCategory(gomock.Any(), category).
@@ -49,8 +49,8 @@ func (s *CategoryServiceSuite) TestCreateCategory_Success() {
 }
 
 func (s *CategoryServiceSuite) TestCreateCategory_Idempotent() {
-	category := &models.Category{Code: "clothing", Name: "Clothing"}
-	existing := &models.Category{ID: 1, Code: "clothing", Name: "Clothing"}
+	category := &model.Category{Code: "clothing", Name: "Clothing"}
+	existing := &model.Category{ID: 1, Code: "clothing", Name: "Clothing"}
 
 	s.repo.EXPECT().
 		CreateCategory(gomock.Any(), category).
@@ -68,7 +68,7 @@ func (s *CategoryServiceSuite) TestCreateCategory_Idempotent() {
 }
 
 func (s *CategoryServiceSuite) TestCreateCategory_Error() {
-	category := &models.Category{Code: "hats", Name: "Hats"}
+	category := &model.Category{Code: "hats", Name: "Hats"}
 
 	s.repo.EXPECT().
 		CreateCategory(gomock.Any(), category).

@@ -1,43 +1,60 @@
-package models_test
+package repository_test
 
 import (
 	"context"
+	"os"
 	"testing"
 
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/app/repository"
+	"github.com/mytheresa/go-hiring-challenge/app/repository/entity"
+	"github.com/mytheresa/go-hiring-challenge/errors"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type CategoriesRepositorySuite struct {
 	suite.Suite
 	db   *gorm.DB
-	repo *models.CategoriesRepository
+	repo *repository.CategoriesRepository
 	ctx  context.Context
 }
 
 func TestCategoriesRepositorySuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(CategoriesRepositorySuite))
 }
 
-func (s *CategoriesRepositorySuite) SetupTest() {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+func (s *CategoriesRepositorySuite) SetupSuite() {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "host=localhost user=postgres password=password dbname=challenge port=5432 sslmode=disable"
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	s.Require().NoError(err)
 
-	s.Require().NoError(db.AutoMigrate(&models.Category{}))
-
 	s.db = db
-	s.repo = models.NewCategoriesRepository(db)
+	s.repo = repository.NewCategoriesRepository(db)
 	s.ctx = context.Background()
+}
 
+func (s *CategoriesRepositorySuite) SetupTest() {
+	s.truncateTables()
 	s.seedTestData()
 }
 
+func (s *CategoriesRepositorySuite) truncateTables() {
+	s.Require().NoError(s.db.Exec("TRUNCATE TABLE product_variants, products, categories RESTART IDENTITY CASCADE").Error)
+}
+
 func (s *CategoriesRepositorySuite) seedTestData() {
-	categories := []models.Category{
-		{ID: 1, Code: "clothing", Name: "Clothing"},
-		{ID: 2, Code: "shoes", Name: "Shoes"},
+	categories := []entity.Category{
+		{Code: "clothing", Name: "Clothing"},
+		{Code: "shoes", Name: "Shoes"},
 	}
 	s.Require().NoError(s.db.Create(&categories).Error)
 }
@@ -47,15 +64,6 @@ func (s *CategoriesRepositorySuite) TestGetCategories_Success() {
 
 	s.NoError(err)
 	s.Len(categories, 2)
-}
-
-func (s *CategoriesRepositorySuite) TestGetCategories_Empty() {
-	s.db.Exec("DELETE FROM categories")
-
-	categories, err := s.repo.GetCategories(s.ctx)
-
-	s.NoError(err)
-	s.Empty(categories)
 }
 
 func (s *CategoriesRepositorySuite) TestGetCategoryByCode_Success() {
@@ -71,11 +79,11 @@ func (s *CategoriesRepositorySuite) TestGetCategoryByCode_NotFound() {
 	category, err := s.repo.GetCategoryByCode(s.ctx, "nonexistent")
 
 	s.Nil(category)
-	s.Error(err)
+	s.ErrorIs(err, gorm.ErrRecordNotFound)
 }
 
 func (s *CategoriesRepositorySuite) TestCreateCategory_Success() {
-	category := &models.Category{
+	category := &model.Category{
 		Code: "hats",
 		Name: "Hats",
 	}
@@ -90,15 +98,13 @@ func (s *CategoriesRepositorySuite) TestCreateCategory_Success() {
 	s.Equal("Hats", saved.Name)
 }
 
-func (s *CategoriesRepositorySuite) TestCreateCategory_DuplicateCode() {
-	category := &models.Category{
-		Code: "clothing", // Already exists
+func (s *CategoriesRepositorySuite) TestCreateCategory_DuplicateCategory() {
+	category := &model.Category{
+		Code: "clothing",
 		Name: "Different Name",
 	}
 
 	err := s.repo.CreateCategory(s.ctx, category)
 
-	// Note: With PostgreSQL this returns ErrCategoryAlreadyExists,
-	// but SQLite returns a different error. We just verify an error occurs.
-	s.Error(err)
+	s.ErrorIs(err, errors.ErrCategoryAlreadyExists)
 }

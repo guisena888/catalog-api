@@ -7,7 +7,7 @@ import (
 
 	"github.com/mytheresa/go-hiring-challenge/app/mocks"
 	"github.com/mytheresa/go-hiring-challenge/app/service"
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -36,10 +36,10 @@ func TestProductServiceSuite(t *testing.T) {
 
 func (s *ProductServiceSuite) TestGetProductDetails_VariantInheritsPrice() {
 	productPrice := decimal.NewFromFloat(10.99)
-	product := &models.Product{
+	product := &model.Product{
 		Code:  "PROD001",
 		Price: productPrice,
-		Variants: []models.Variant{
+		Variants: []model.Variant{
 			{Name: "With Price", SKU: "SKU-A", Price: decimal.NewFromFloat(15.00)},
 			{Name: "No Price", SKU: "SKU-B", Price: decimal.Decimal{}},
 		},

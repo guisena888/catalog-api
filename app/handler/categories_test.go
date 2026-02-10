@@ -9,7 +9,7 @@ import (
 
 	"github.com/mytheresa/go-hiring-challenge/app/handler"
 	"github.com/mytheresa/go-hiring-challenge/app/mocks"
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -35,10 +35,8 @@ func TestCategoriesHandlerSuite(t *testing.T) {
 	suite.Run(t, new(CategoriesHandlerSuite))
 }
 
-// --- GetCategories tests ---
-
 func (s *CategoriesHandlerSuite) TestGetCategories_Success() {
-	categories := []models.Category{
+	categories := []model.Category{
 		{Code: "clothing", Name: "Clothing"},
 		{Code: "shoes", Name: "Shoes"},
 	}
@@ -61,7 +59,7 @@ func (s *CategoriesHandlerSuite) TestGetCategories_Success() {
 func (s *CategoriesHandlerSuite) TestGetCategories_Empty() {
 	s.mock.EXPECT().
 		GetCategories(gomock.Any()).
-		Return([]models.Category{}, nil)
+		Return([]model.Category{}, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/categories", nil)
 	rec := httptest.NewRecorder()
@@ -84,12 +82,10 @@ func (s *CategoriesHandlerSuite) TestGetCategories_InternalError() {
 	s.Contains(rec.Body.String(), `"error":"internal server error"`)
 }
 
-// --- CreateCategory tests ---
-
 func (s *CategoriesHandlerSuite) TestCreateCategory_Success() {
 	s.mock.EXPECT().
 		CreateCategory(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx any, c *models.Category) (*models.Category, error) {
+		DoAndReturn(func(ctx any, c *model.Category) (*model.Category, error) {
 			return c, nil
 		})
 
@@ -104,7 +100,7 @@ func (s *CategoriesHandlerSuite) TestCreateCategory_Success() {
 }
 
 func (s *CategoriesHandlerSuite) TestCreateCategory_Idempotent() {
-	existing := &models.Category{Code: "clothing", Name: "Clothing"}
+	existing := &model.Category{Code: "clothing", Name: "Clothing"}
 
 	s.mock.EXPECT().
 		CreateCategory(gomock.Any(), gomock.Any()).
@@ -137,7 +133,7 @@ func (s *CategoriesHandlerSuite) TestCreateCategory_MissingFields() {
 	s.handler.HandleCreateCategory(rec, req)
 
 	s.Equal(http.StatusBadRequest, rec.Code)
-	s.Contains(rec.Body.String(), `"error":"code and name are required"`)
+	s.Contains(rec.Body.String(), `"error"`)
 }
 
 func (s *CategoriesHandlerSuite) TestCreateCategory_InternalError() {

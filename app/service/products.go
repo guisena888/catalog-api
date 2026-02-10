@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 )
 
 type ProductService struct {
@@ -16,11 +16,11 @@ func NewProductService(r ProductRepository) *ProductService {
 	}
 }
 
-func (s *ProductService) GetProducts(ctx context.Context, filter *models.ProductFilter) ([]models.Product, int64, error) {
+func (s *ProductService) GetProducts(ctx context.Context, filter *model.ProductFilter) ([]model.Product, int64, error) {
 	return s.repo.GetProducts(ctx, filter)
 }
 
-func (s *ProductService) GetProductDetails(ctx context.Context, code string) (*models.Product, error) {
+func (s *ProductService) GetProductDetails(ctx context.Context, code string) (*model.Product, error) {
 	product, err := s.repo.GetProductDetails(ctx, code)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (s *ProductService) GetProductDetails(ctx context.Context, code string) (*m
 	return product, nil
 }
 
-func normalizePrices(product *models.Product) {
+func normalizePrices(product *model.Product) {
 	for i, v := range product.Variants {
 		if !v.Price.IsPositive() {
 			product.Variants[i].Price = product.Price

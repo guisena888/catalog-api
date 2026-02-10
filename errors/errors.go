@@ -1,11 +1,11 @@
 package errors
 
-type Kind int
+type Kind string
 
 const (
-	KindInvalidInput Kind = iota
-	KindNotFound
-	KindAlreadyExists
+	KindInvalidInput  Kind = "invalid_input"
+	KindNotFound      Kind = "not_found"
+	KindAlreadyExists Kind = "already_exists"
 )
 
 type AppError struct {
@@ -22,7 +22,6 @@ var (
 	ErrInvalidLimit          = &AppError{Kind: KindInvalidInput, Message: "invalid limit"}
 	ErrInvalidPriceLessThan  = &AppError{Kind: KindInvalidInput, Message: "invalid priceLessThan value"}
 	ErrInvalidRequestBody    = &AppError{Kind: KindInvalidInput, Message: "invalid request body"}
-	ErrMissingRequiredFields = &AppError{Kind: KindInvalidInput, Message: "code and name are required"}
 	ErrMissingProductCode    = &AppError{Kind: KindInvalidInput, Message: "product code is required"}
 	ErrProductNotFound       = &AppError{Kind: KindNotFound, Message: "product not found"}
 	ErrCategoryAlreadyExists = &AppError{Kind: KindAlreadyExists, Message: "category already exists"}

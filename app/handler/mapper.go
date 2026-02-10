@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 )
 
 type CatalogResponse struct {
@@ -28,7 +28,18 @@ type VariantResponse struct {
 	Price float64 `json:"price"`
 }
 
-func toProductResponse(p models.Product) ProductResponse {
+func toCatalogResponse(products []model.Product, total int64) CatalogResponse {
+	responses := make([]ProductResponse, len(products))
+	for i, p := range products {
+		responses[i] = toProductResponse(p)
+	}
+	return CatalogResponse{
+		Products: responses,
+		Total:    total,
+	}
+}
+
+func toProductResponse(p model.Product) ProductResponse {
 	return ProductResponse{
 		Code:     p.Code,
 		Price:    p.Price.InexactFloat64(),
@@ -36,7 +47,7 @@ func toProductResponse(p models.Product) ProductResponse {
 	}
 }
 
-func toProductDetailResponse(p models.Product) ProductDetailResponse {
+func toProductDetailResponse(p model.Product) ProductDetailResponse {
 	variants := make([]VariantResponse, len(p.Variants))
 	for i, v := range p.Variants {
 		variants[i] = toVariantResponse(v)
@@ -50,7 +61,7 @@ func toProductDetailResponse(p models.Product) ProductDetailResponse {
 	}
 }
 
-func toVariantResponse(v models.Variant) VariantResponse {
+func toVariantResponse(v model.Variant) VariantResponse {
 	return VariantResponse{
 		Name:  v.Name,
 		SKU:   v.SKU,
@@ -63,7 +74,7 @@ type CategoryResponse struct {
 	Name string `json:"name"`
 }
 
-func toCategoryResponse(c models.Category) CategoryResponse {
+func toCategoryResponse(c model.Category) CategoryResponse {
 	return CategoryResponse{
 		Code: c.Code,
 		Name: c.Name,

@@ -5,7 +5,7 @@ import (
 
 	"github.com/mytheresa/go-hiring-challenge/app/api"
 	apperrors "github.com/mytheresa/go-hiring-challenge/errors"
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 )
 
 type CatalogHandler struct {
@@ -19,7 +19,7 @@ func NewCatalogHandler(s ProductService) *CatalogHandler {
 }
 
 func (h *CatalogHandler) HandleGetCatalog(w http.ResponseWriter, r *http.Request) {
-	filter := new(models.ProductFilter)
+	filter := new(model.ProductFilter)
 	if err := filter.Parse(r); err != nil {
 		api.HandleError(w, err)
 		return
@@ -31,15 +31,7 @@ func (h *CatalogHandler) HandleGetCatalog(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	products := make([]ProductResponse, len(res))
-	for i, p := range res {
-		products[i] = toProductResponse(p)
-	}
-
-	api.OKResponse(w, CatalogResponse{
-		Products: products,
-		Total:    total,
-	})
+	api.OKResponse(w, toCatalogResponse(res, total))
 }
 
 func (h *CatalogHandler) HandleGetProductDetails(w http.ResponseWriter, r *http.Request) {

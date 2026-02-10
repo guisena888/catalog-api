@@ -10,16 +10,16 @@ import (
 	"github.com/mytheresa/go-hiring-challenge/app/handler"
 	"github.com/mytheresa/go-hiring-challenge/app/mocks"
 	apperrors "github.com/mytheresa/go-hiring-challenge/errors"
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func sampleProducts() []models.Product {
-	return []models.Product{
-		{Code: "P001", Price: decimal.NewFromFloat(10.99), Category: models.Category{Code: "clothing"}},
-		{Code: "P002", Price: decimal.NewFromFloat(5.50), Category: models.Category{Code: "shoes"}},
+func sampleProducts() []model.Product {
+	return []model.Product{
+		{Code: "P001", Price: decimal.NewFromFloat(10.99), Category: model.Category{Code: "clothing"}},
+		{Code: "P002", Price: decimal.NewFromFloat(5.50), Category: model.Category{Code: "shoes"}},
 	}
 }
 
@@ -47,7 +47,7 @@ func TestCatalogHandlerSuite(t *testing.T) {
 func (s *CatalogHandlerSuite) TestGetCatalog_DefaultPagination() {
 	s.mock.EXPECT().
 		GetProducts(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+		DoAndReturn(func(ctx context.Context, f *model.ProductFilter) ([]model.Product, int64, error) {
 			s.Equal(0, f.Pagination.Offset)
 			s.Equal(10, f.Pagination.Limit)
 			s.Empty(f.CategoryCode)
@@ -65,7 +65,7 @@ func (s *CatalogHandlerSuite) TestGetCatalog_DefaultPagination() {
 func (s *CatalogHandlerSuite) TestGetCatalog_CustomPagination() {
 	s.mock.EXPECT().
 		GetProducts(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+		DoAndReturn(func(ctx context.Context, f *model.ProductFilter) ([]model.Product, int64, error) {
 			s.Equal(5, f.Pagination.Offset)
 			s.Equal(20, f.Pagination.Limit)
 			return sampleProducts(), int64(2), nil
@@ -93,7 +93,7 @@ func (s *CatalogHandlerSuite) TestGetCatalog_InvalidLimit() {
 func (s *CatalogHandlerSuite) TestGetCatalog_CategoryFilter() {
 	s.mock.EXPECT().
 		GetProducts(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+		DoAndReturn(func(ctx context.Context, f *model.ProductFilter) ([]model.Product, int64, error) {
 			s.Equal("shoes", f.CategoryCode)
 			s.Equal(0, f.Pagination.Offset)
 			s.Equal(10, f.Pagination.Limit)
@@ -110,7 +110,7 @@ func (s *CatalogHandlerSuite) TestGetCatalog_CategoryFilter() {
 func (s *CatalogHandlerSuite) TestGetCatalog_PriceLessThanFilter() {
 	s.mock.EXPECT().
 		GetProducts(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+		DoAndReturn(func(ctx context.Context, f *model.ProductFilter) ([]model.Product, int64, error) {
 			s.Require().NotNil(f.PriceLessThan)
 			s.True(decimal.NewFromInt(10).Equal(*f.PriceLessThan))
 			return nil, int64(0), nil
@@ -126,7 +126,7 @@ func (s *CatalogHandlerSuite) TestGetCatalog_PriceLessThanFilter() {
 func (s *CatalogHandlerSuite) TestGetCatalog_ResponseIncludesTotalAndCategory() {
 	s.mock.EXPECT().
 		GetProducts(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+		DoAndReturn(func(ctx context.Context, f *model.ProductFilter) ([]model.Product, int64, error) {
 			return sampleProducts(), int64(42), nil
 		})
 
@@ -144,7 +144,7 @@ func (s *CatalogHandlerSuite) TestGetCatalog_ResponseIncludesTotalAndCategory() 
 func (s *CatalogHandlerSuite) TestGetCatalog_RepositoryError() {
 	s.mock.EXPECT().
 		GetProducts(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+		DoAndReturn(func(ctx context.Context, f *model.ProductFilter) ([]model.Product, int64, error) {
 			return nil, int64(0), errors.New("db down")
 		})
 
@@ -174,11 +174,11 @@ func (s *CatalogHandlerSuite) TestGetCatalog_NegativePriceLessThan() {
 }
 
 func (s *CatalogHandlerSuite) TestGetProductDetails_Success() {
-	product := &models.Product{
+	product := &model.Product{
 		Code:     "PROD001",
 		Price:    decimal.NewFromFloat(10.99),
-		Category: models.Category{Code: "clothing"},
-		Variants: []models.Variant{
+		Category: model.Category{Code: "clothing"},
+		Variants: []model.Variant{
 			{Name: "Variant A", SKU: "SKU001A", Price: decimal.NewFromFloat(11.99)},
 			{Name: "Variant B", SKU: "SKU001B", Price: decimal.Decimal{}},
 		},
@@ -186,7 +186,7 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_Success() {
 
 	s.mock.EXPECT().
 		GetProductDetails(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, code string) (*models.Product, error) {
+		DoAndReturn(func(ctx context.Context, code string) (*model.Product, error) {
 			s.Equal("PROD001", code)
 			return product, nil
 		})
@@ -204,11 +204,11 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_Success() {
 }
 
 func (s *CatalogHandlerSuite) TestGetProductDetails_VariantPrices() {
-	product := &models.Product{
+	product := &model.Product{
 		Code:     "PROD001",
 		Price:    decimal.NewFromFloat(10.99),
-		Category: models.Category{Code: "clothing"},
-		Variants: []models.Variant{
+		Category: model.Category{Code: "clothing"},
+		Variants: []model.Variant{
 			{Name: "With Price", SKU: "SKU-A", Price: decimal.NewFromFloat(15.00)},
 			{Name: "Inherited Price", SKU: "SKU-B", Price: decimal.NewFromFloat(10.99)},
 		},
@@ -216,7 +216,7 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_VariantPrices() {
 
 	s.mock.EXPECT().
 		GetProductDetails(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, code string) (*models.Product, error) {
+		DoAndReturn(func(ctx context.Context, code string) (*model.Product, error) {
 			s.Equal("PROD001", code)
 			return product, nil
 		})
@@ -235,7 +235,7 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_VariantPrices() {
 func (s *CatalogHandlerSuite) TestGetProductDetails_NotFound() {
 	s.mock.EXPECT().
 		GetProductDetails(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, code string) (*models.Product, error) {
+		DoAndReturn(func(ctx context.Context, code string) (*model.Product, error) {
 			s.Equal("INVALID", code)
 			return nil, apperrors.ErrProductNotFound
 		})
@@ -252,7 +252,7 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_NotFound() {
 func (s *CatalogHandlerSuite) TestGetProductDetails_InternalError() {
 	s.mock.EXPECT().
 		GetProductDetails(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, code string) (*models.Product, error) {
+		DoAndReturn(func(ctx context.Context, code string) (*model.Product, error) {
 			s.Equal("PROD001", code)
 			return nil, errors.New("db down")
 		})

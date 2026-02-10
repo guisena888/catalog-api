@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	models "github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,10 +42,10 @@ func (m *MockProductService) EXPECT() *MockProductServiceMockRecorder {
 }
 
 // GetProductDetails mocks base method.
-func (m *MockProductService) GetProductDetails(ctx context.Context, code string) (*models.Product, error) {
+func (m *MockProductService) GetProductDetails(ctx context.Context, code string) (*model.Product, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProductDetails", ctx, code)
-	ret0, _ := ret[0].(*models.Product)
+	ret0, _ := ret[0].(*model.Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -57,10 +57,10 @@ func (mr *MockProductServiceMockRecorder) GetProductDetails(ctx, code any) *gomo
 }
 
 // GetProducts mocks base method.
-func (m *MockProductService) GetProducts(ctx context.Context, filter *models.ProductFilter) ([]models.Product, int64, error) {
+func (m *MockProductService) GetProducts(ctx context.Context, filter *model.ProductFilter) ([]model.Product, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProducts", ctx, filter)
-	ret0, _ := ret[0].([]models.Product)
+	ret0, _ := ret[0].([]model.Product)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -97,10 +97,10 @@ func (m *MockCategoryService) EXPECT() *MockCategoryServiceMockRecorder {
 }
 
 // CreateCategory mocks base method.
-func (m *MockCategoryService) CreateCategory(ctx context.Context, category *models.Category) (*models.Category, error) {
+func (m *MockCategoryService) CreateCategory(ctx context.Context, category *model.Category) (*model.Category, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateCategory", ctx, category)
-	ret0, _ := ret[0].(*models.Category)
+	ret0, _ := ret[0].(*model.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -112,10 +112,10 @@ func (mr *MockCategoryServiceMockRecorder) CreateCategory(ctx, category any) *go
 }
 
 // GetCategories mocks base method.
-func (m *MockCategoryService) GetCategories(ctx context.Context) ([]models.Category, error) {
+func (m *MockCategoryService) GetCategories(ctx context.Context) ([]model.Category, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCategories", ctx)
-	ret0, _ := ret[0].([]models.Category)
+	ret0, _ := ret[0].([]model.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -1,5 +1,6 @@
-package models
+package entity
 
+// Category represents the database entity for categories.
 type Category struct {
 	ID   uint   `gorm:"primaryKey"`
 	Code string `gorm:"uniqueIndex;not null"`

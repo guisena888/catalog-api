@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/mytheresa/go-hiring-challenge/app/api"
 	apperrors "github.com/mytheresa/go-hiring-challenge/errors"
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 )
+
+var validate = validator.New()
 
 type CategoriesHandler struct {
 	categories CategoryService
@@ -33,8 +36,8 @@ func (h *CategoriesHandler) HandleGetCategories(w http.ResponseWriter, r *http.R
 }
 
 type createCategoryRequest struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
+	Code string `json:"code" validate:"required"`
+	Name string `json:"name" validate:"required"`
 }
 
 func (h *CategoriesHandler) HandleCreateCategory(w http.ResponseWriter, r *http.Request) {
@@ -44,12 +47,12 @@ func (h *CategoriesHandler) HandleCreateCategory(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if req.Code == "" || req.Name == "" {
-		api.HandleError(w, apperrors.ErrMissingRequiredFields)
+	if err := validate.Struct(req); err != nil {
+		api.HandleError(w, apperrors.ErrInvalidRequestBody)
 		return
 	}
 
-	category := &models.Category{
+	category := &model.Category{
 		Code: req.Code,
 		Name: req.Name,
 	}

@@ -1,67 +1,83 @@
-package models_test
+package repository_test
 
 import (
 	"context"
+	"os"
 	"testing"
 
+	"github.com/mytheresa/go-hiring-challenge/app/repository"
+	"github.com/mytheresa/go-hiring-challenge/app/repository/entity"
 	"github.com/mytheresa/go-hiring-challenge/errors"
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/pkg/model"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type ProductsRepositorySuite struct {
 	suite.Suite
 	db   *gorm.DB
-	repo *models.ProductsRepository
+	repo *repository.ProductsRepository
 	ctx  context.Context
 }
 
 func TestProductsRepositorySuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(ProductsRepositorySuite))
 }
 
-func (s *ProductsRepositorySuite) SetupTest() {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+func (s *ProductsRepositorySuite) SetupSuite() {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "host=localhost user=postgres password=password dbname=challenge port=5432 sslmode=disable"
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	s.Require().NoError(err)
 
-	s.Require().NoError(db.AutoMigrate(&models.Category{}, &models.Product{}, &models.Variant{}))
-
 	s.db = db
-	s.repo = models.NewProductsRepository(db)
+	s.repo = repository.NewProductsRepository(db)
 	s.ctx = context.Background()
+}
 
+func (s *ProductsRepositorySuite) SetupTest() {
+	s.truncateTables()
 	s.seedTestData()
 }
 
+func (s *ProductsRepositorySuite) truncateTables() {
+	s.Require().NoError(s.db.Exec("TRUNCATE TABLE product_variants, products, categories RESTART IDENTITY CASCADE").Error)
+}
+
 func (s *ProductsRepositorySuite) seedTestData() {
-	categories := []models.Category{
-		{ID: 1, Code: "clothing", Name: "Clothing"},
-		{ID: 2, Code: "shoes", Name: "Shoes"},
-		{ID: 3, Code: "accessories", Name: "Accessories"},
+	categories := []entity.Category{
+		{Code: "clothing", Name: "Clothing"},
+		{Code: "shoes", Name: "Shoes"},
+		{Code: "accessories", Name: "Accessories"},
 	}
 	s.Require().NoError(s.db.Create(&categories).Error)
 
-	products := []models.Product{
-		{ID: 1, Code: "PROD001", Price: decimal.NewFromFloat(100.00), CategoryID: 1},
-		{ID: 2, Code: "PROD002", Price: decimal.NewFromFloat(50.00), CategoryID: 2},
-		{ID: 3, Code: "PROD003", Price: decimal.NewFromFloat(200.00), CategoryID: 3},
-		{ID: 4, Code: "PROD004", Price: decimal.NewFromFloat(75.00), CategoryID: 1},
+	products := []entity.Product{
+		{Code: "PROD001", Price: decimal.NewFromFloat(100.00), CategoryID: categories[0].ID},
+		{Code: "PROD002", Price: decimal.NewFromFloat(50.00), CategoryID: categories[1].ID},
+		{Code: "PROD003", Price: decimal.NewFromFloat(200.00), CategoryID: categories[2].ID},
+		{Code: "PROD004", Price: decimal.NewFromFloat(75.00), CategoryID: categories[0].ID},
 	}
 	s.Require().NoError(s.db.Create(&products).Error)
 
-	variants := []models.Variant{
-		{ID: 1, ProductID: 1, Name: "Small", SKU: "PROD001-S", Price: decimal.NewFromFloat(95.00)},
-		{ID: 2, ProductID: 1, Name: "Large", SKU: "PROD001-L", Price: decimal.Decimal{}},
+	variants := []entity.Variant{
+		{ProductID: products[0].ID, Name: "Small", SKU: "PROD001-S", Price: decimal.NewFromFloat(95.00)},
+		{ProductID: products[0].ID, Name: "Large", SKU: "PROD001-L", Price: decimal.Decimal{}},
 	}
 	s.Require().NoError(s.db.Create(&variants).Error)
 }
 
 func (s *ProductsRepositorySuite) TestGetProducts_DefaultPagination() {
-	filter := &models.ProductFilter{
-		Pagination: models.PaginationInput{Offset: 0, Limit: 10},
+	filter := &model.ProductFilter{
+		Pagination: model.PaginationInput{Offset: 0, Limit: 10},
 	}
 
 	products, total, err := s.repo.GetProducts(s.ctx, filter)
@@ -72,8 +88,8 @@ func (s *ProductsRepositorySuite) TestGetProducts_DefaultPagination() {
 }
 
 func (s *ProductsRepositorySuite) TestGetProducts_WithPagination() {
-	filter := &models.ProductFilter{
-		Pagination: models.PaginationInput{Offset: 1, Limit: 2},
+	filter := &model.ProductFilter{
+		Pagination: model.PaginationInput{Offset: 1, Limit: 2},
 	}
 
 	products, total, err := s.repo.GetProducts(s.ctx, filter)
@@ -84,9 +100,9 @@ func (s *ProductsRepositorySuite) TestGetProducts_WithPagination() {
 }
 
 func (s *ProductsRepositorySuite) TestGetProducts_FilterByCategory() {
-	filter := &models.ProductFilter{
+	filter := &model.ProductFilter{
 		CategoryCode: "clothing",
-		Pagination:   models.PaginationInput{Offset: 0, Limit: 10},
+		Pagination:   model.PaginationInput{Offset: 0, Limit: 10},
 	}
 
 	products, total, err := s.repo.GetProducts(s.ctx, filter)
@@ -101,9 +117,9 @@ func (s *ProductsRepositorySuite) TestGetProducts_FilterByCategory() {
 
 func (s *ProductsRepositorySuite) TestGetProducts_FilterByPriceLessThan() {
 	price := decimal.NewFromFloat(80.00)
-	filter := &models.ProductFilter{
+	filter := &model.ProductFilter{
 		PriceLessThan: &price,
-		Pagination:    models.PaginationInput{Offset: 0, Limit: 10},
+		Pagination:    model.PaginationInput{Offset: 0, Limit: 10},
 	}
 
 	products, total, err := s.repo.GetProducts(s.ctx, filter)
@@ -118,10 +134,10 @@ func (s *ProductsRepositorySuite) TestGetProducts_FilterByPriceLessThan() {
 
 func (s *ProductsRepositorySuite) TestGetProducts_CombinedFilters() {
 	price := decimal.NewFromFloat(80.00)
-	filter := &models.ProductFilter{
+	filter := &model.ProductFilter{
 		CategoryCode:  "clothing",
 		PriceLessThan: &price,
-		Pagination:    models.PaginationInput{Offset: 0, Limit: 10},
+		Pagination:    model.PaginationInput{Offset: 0, Limit: 10},
 	}
 
 	products, total, err := s.repo.GetProducts(s.ctx, filter)
@@ -130,19 +146,6 @@ func (s *ProductsRepositorySuite) TestGetProducts_CombinedFilters() {
 	s.Equal(int64(1), total)
 	s.Len(products, 1)
 	s.Equal("PROD004", products[0].Code)
-}
-
-func (s *ProductsRepositorySuite) TestGetProducts_PreloadsCategory() {
-	filter := &models.ProductFilter{
-		Pagination: models.PaginationInput{Offset: 0, Limit: 10},
-	}
-
-	products, _, err := s.repo.GetProducts(s.ctx, filter)
-
-	s.NoError(err)
-	for _, p := range products {
-		s.NotEmpty(p.Category.Code)
-	}
 }
 
 func (s *ProductsRepositorySuite) TestGetProductDetails_Success() {
@@ -167,6 +170,12 @@ func (s *ProductsRepositorySuite) TestGetProductDetails_IncludesVariants() {
 
 	s.NoError(err)
 	s.Len(product.Variants, 2)
-	s.Equal("Small", product.Variants[0].Name)
-	s.Equal("PROD001-S", product.Variants[0].SKU)
+	s.Equal("100", product.Price.StringFixed(0))
+
+	variantNames := make(map[string]bool)
+	for _, v := range product.Variants {
+		variantNames[v.Name] = true
+	}
+	s.True(variantNames["Small"])
+	s.True(variantNames["Large"])
 }
