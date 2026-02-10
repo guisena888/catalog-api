@@ -2,7 +2,6 @@ package repository_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/mytheresa/go-hiring-challenge/app/repository"
@@ -29,10 +28,7 @@ func TestCategoriesRepositorySuite(t *testing.T) {
 }
 
 func (s *CategoriesRepositorySuite) SetupSuite() {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "host=localhost user=postgres password=password dbname=challenge port=5432 sslmode=disable"
-	}
+	dsn := "host=localhost user=postgres password=password dbname=challenge port=5432 sslmode=disable"
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	s.Require().NoError(err)
