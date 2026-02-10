@@ -1,0 +1,259 @@
+openapi: 3.0.3
+info:
+  title: Product Catalog API
+  description: REST API for managing a product catalog with categories and variants
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /catalog:
+    get:
+      summary: List products
+      description: Returns a paginated list of products with optional filtering
+      operationId: listProducts
+      parameters:
+        - name: category
+          in: query
+          description: Filter by category code
+          schema:
+            type: string
+          example: clothing
+        - name: priceLessThan
+          in: query
+          description: Filter by maximum price (exclusive)
+          schema:
+            type: number
+            format: double
+            minimum: 0
+          example: 100.00
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: limit
+          in: query
+          description: Pagination limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 5
+          example: 10
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+        "400":
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /catalog/{code}:
+    get:
+      summary: Get product details
+      description: Returns detailed information about a product including its variants
+      operationId: getProductDetails
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Product code
+          schema:
+            type: string
+          example: PROD001
+      responses:
+        "200":
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetailResponse"
+        "400":
+          description: Invalid product code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /categories:
+    get:
+      summary: List categories
+      description: Returns all available categories
+      operationId: listCategories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryResponse"
+
+    post:
+      summary: Create category
+      description: Creates a new category. This operation is idempotent - if the category already exists, returns the existing category.
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    CatalogResponse:
+      type: object
+      required:
+        - products
+        - total
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductResponse"
+        total:
+          type: integer
+          format: int64
+          description: Total number of products matching the filter
+          example: 42
+
+    ProductResponse:
+      type: object
+      required:
+        - code
+        - price
+        - category
+      properties:
+        code:
+          type: string
+          description: Unique product code
+          example: PROD001
+        price:
+          type: number
+          format: double
+          description: Product price
+          example: 100.00
+        category:
+          type: string
+          description: Category code
+          example: clothing
+
+    ProductDetailResponse:
+      type: object
+      required:
+        - code
+        - price
+        - category
+        - variants
+      properties:
+        code:
+          type: string
+          description: Unique product code
+          example: PROD001
+        price:
+          type: number
+          format: double
+          description: Product price
+          example: 100.00
+        category:
+          type: string
+          description: Category code
+          example: clothing
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantResponse"
+
+    VariantResponse:
+      type: object
+      required:
+        - name
+        - sku
+        - price
+      properties:
+        name:
+          type: string
+          description: Variant name
+          example: Small
+        sku:
+          type: string
+          description: Stock keeping unit
+          example: PROD001-S
+        price:
+          type: number
+          format: double
+          description: Variant price (inherits from product if not set)
+          example: 95.00
+
+    CategoryResponse:
+      type: object
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          description: Unique category code
+          example: clothing
+        name:
+          type: string
+          description: Category display name
+          example: Clothing
+
+    CreateCategoryRequest:
+      type: object
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          description: Unique category code
+          example: hats
+        name:
+          type: string
+          description: Category display name
+          example: Hats
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: product not found

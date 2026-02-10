@@ -27,3 +27,7 @@ docker-up ::
 
 docker-down ::
 	docker compose down
+
+swagger ::
+	docker compose --profile docs up -d swagger
+	@echo "Swagger UI available at http://localhost:8081"
