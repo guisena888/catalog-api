@@ -44,6 +44,9 @@ func (p *PaginationInput) Parse(q url.Values) error {
 }
 
 func (p *PaginationInput) Validate() error {
+	if p.Offset < 0 {
+		return errors.ErrInvalidOffset
+	}
 	if p.Limit > maxLimit || p.Limit < minLimit {
 		return errors.ErrInvalidLimit
 	}

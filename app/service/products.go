@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/mytheresa/go-hiring-challenge/models"
 )
 
@@ -14,12 +16,12 @@ func NewProductService(r ProductRepository) *ProductService {
 	}
 }
 
-func (s *ProductService) GetProducts(filter *models.ProductFilter) ([]models.Product, int64, error) {
-	return s.repo.GetProducts(filter)
+func (s *ProductService) GetProducts(ctx context.Context, filter *models.ProductFilter) ([]models.Product, int64, error) {
+	return s.repo.GetProducts(ctx, filter)
 }
 
-func (s *ProductService) GetProductDetails(code string) (*models.Product, error) {
-	product, err := s.repo.GetProductDetails(code)
+func (s *ProductService) GetProductDetails(ctx context.Context, code string) (*models.Product, error) {
+	product, err := s.repo.GetProductDetails(ctx, code)
 	if err != nil {
 		return nil, err
 	}

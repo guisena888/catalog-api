@@ -1,6 +1,8 @@
 package models
 
 import (
+	"context"
+
 	"github.com/mytheresa/go-hiring-challenge/errors"
 	"gorm.io/gorm"
 )
@@ -15,8 +17,8 @@ func NewProductsRepository(db *gorm.DB) *ProductsRepository {
 	}
 }
 
-func (r *ProductsRepository) GetProducts(filter *ProductFilter) ([]Product, int64, error) {
-	query := r.db.Model(&Product{})
+func (r *ProductsRepository) GetProducts(ctx context.Context, filter *ProductFilter) ([]Product, int64, error) {
+	query := r.db.WithContext(ctx).Model(&Product{})
 
 	if filter.CategoryCode != "" {
 		query = query.Joins("JOIN categories ON categories.id = products.category_id").
@@ -42,14 +44,14 @@ func (r *ProductsRepository) GetProducts(filter *ProductFilter) ([]Product, int6
 	return products, total, nil
 }
 
-func (r *ProductsRepository) GetProductDetails(code string) (*Product, error) {
+func (r *ProductsRepository) GetProductDetails(ctx context.Context, code string) (*Product, error) {
 	var product Product
-	err := r.db.Preload("Category").Preload("Variants").
+	err := r.db.WithContext(ctx).Preload("Category").Preload("Variants").
 		Where("code = ?", code).First(&product).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, errors.ErrProductNotFound
+	}
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.ErrProductNotFound
-		}
 		return nil, err
 	}
 	return &product, nil

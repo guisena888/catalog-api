@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -45,10 +46,10 @@ func (s *ProductServiceSuite) TestGetProductDetails_VariantInheritsPrice() {
 	}
 
 	s.repo.EXPECT().
-		GetProductDetails("PROD001").
+		GetProductDetails(gomock.Any(), "PROD001").
 		Return(product, nil)
 
-	result, err := s.service.GetProductDetails("PROD001")
+	result, err := s.service.GetProductDetails(context.Background(), "PROD001")
 
 	s.NoError(err)
 	s.True(decimal.NewFromFloat(15.00).Equal(result.Variants[0].Price))
@@ -57,10 +58,10 @@ func (s *ProductServiceSuite) TestGetProductDetails_VariantInheritsPrice() {
 
 func (s *ProductServiceSuite) TestGetProductDetails_Error() {
 	s.repo.EXPECT().
-		GetProductDetails("INVALID").
+		GetProductDetails(gomock.Any(), "INVALID").
 		Return(nil, errors.New("not found"))
 
-	result, err := s.service.GetProductDetails("INVALID")
+	result, err := s.service.GetProductDetails(context.Background(), "INVALID")
 
 	s.Nil(result)
 	s.EqualError(err, "not found")

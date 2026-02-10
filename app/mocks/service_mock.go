@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	models "github.com/mytheresa/go-hiring-challenge/models"
@@ -41,24 +42,24 @@ func (m *MockProductRepository) EXPECT() *MockProductRepositoryMockRecorder {
 }
 
 // GetProductDetails mocks base method.
-func (m *MockProductRepository) GetProductDetails(code string) (*models.Product, error) {
+func (m *MockProductRepository) GetProductDetails(ctx context.Context, code string) (*models.Product, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProductDetails", code)
+	ret := m.ctrl.Call(m, "GetProductDetails", ctx, code)
 	ret0, _ := ret[0].(*models.Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetProductDetails indicates an expected call of GetProductDetails.
-func (mr *MockProductRepositoryMockRecorder) GetProductDetails(code any) *gomock.Call {
+func (mr *MockProductRepositoryMockRecorder) GetProductDetails(ctx, code any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductDetails", reflect.TypeOf((*MockProductRepository)(nil).GetProductDetails), code)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductDetails", reflect.TypeOf((*MockProductRepository)(nil).GetProductDetails), ctx, code)
 }
 
 // GetProducts mocks base method.
-func (m *MockProductRepository) GetProducts(filter *models.ProductFilter) ([]models.Product, int64, error) {
+func (m *MockProductRepository) GetProducts(ctx context.Context, filter *models.ProductFilter) ([]models.Product, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProducts", filter)
+	ret := m.ctrl.Call(m, "GetProducts", ctx, filter)
 	ret0, _ := ret[0].([]models.Product)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -66,7 +67,75 @@ func (m *MockProductRepository) GetProducts(filter *models.ProductFilter) ([]mod
 }
 
 // GetProducts indicates an expected call of GetProducts.
-func (mr *MockProductRepositoryMockRecorder) GetProducts(filter any) *gomock.Call {
+func (mr *MockProductRepositoryMockRecorder) GetProducts(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProducts", reflect.TypeOf((*MockProductRepository)(nil).GetProducts), filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProducts", reflect.TypeOf((*MockProductRepository)(nil).GetProducts), ctx, filter)
+}
+
+// MockCategoryRepository is a mock of CategoryRepository interface.
+type MockCategoryRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockCategoryRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockCategoryRepositoryMockRecorder is the mock recorder for MockCategoryRepository.
+type MockCategoryRepositoryMockRecorder struct {
+	mock *MockCategoryRepository
+}
+
+// NewMockCategoryRepository creates a new mock instance.
+func NewMockCategoryRepository(ctrl *gomock.Controller) *MockCategoryRepository {
+	mock := &MockCategoryRepository{ctrl: ctrl}
+	mock.recorder = &MockCategoryRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCategoryRepository) EXPECT() *MockCategoryRepositoryMockRecorder {
+	return m.recorder
+}
+
+// CreateCategory mocks base method.
+func (m *MockCategoryRepository) CreateCategory(ctx context.Context, category *models.Category) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateCategory", ctx, category)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateCategory indicates an expected call of CreateCategory.
+func (mr *MockCategoryRepositoryMockRecorder) CreateCategory(ctx, category any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCategory", reflect.TypeOf((*MockCategoryRepository)(nil).CreateCategory), ctx, category)
+}
+
+// GetCategories mocks base method.
+func (m *MockCategoryRepository) GetCategories(ctx context.Context) ([]models.Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCategories", ctx)
+	ret0, _ := ret[0].([]models.Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCategories indicates an expected call of GetCategories.
+func (mr *MockCategoryRepositoryMockRecorder) GetCategories(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategories", reflect.TypeOf((*MockCategoryRepository)(nil).GetCategories), ctx)
+}
+
+// GetCategoryByCode mocks base method.
+func (m *MockCategoryRepository) GetCategoryByCode(ctx context.Context, code string) (*models.Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCategoryByCode", ctx, code)
+	ret0, _ := ret[0].(*models.Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCategoryByCode indicates an expected call of GetCategoryByCode.
+func (mr *MockCategoryRepositoryMockRecorder) GetCategoryByCode(ctx, code any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategoryByCode", reflect.TypeOf((*MockCategoryRepository)(nil).GetCategoryByCode), ctx, code)
 }

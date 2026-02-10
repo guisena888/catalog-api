@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,6 @@ import (
 	apperrors "github.com/mytheresa/go-hiring-challenge/errors"
 	"github.com/mytheresa/go-hiring-challenge/models"
 	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -46,10 +46,12 @@ func TestCatalogHandlerSuite(t *testing.T) {
 
 func (s *CatalogHandlerSuite) TestGetCatalog_DefaultPagination() {
 	s.mock.EXPECT().
-		GetProducts(gomock.Any()).
-		DoAndReturn(func(filter *models.ProductFilter) ([]models.Product, int64, error) {
-			assert.Equal(s.T(), 0, filter.Pagination.Offset)
-			assert.Equal(s.T(), 10, filter.Pagination.Limit)
+		GetProducts(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+			s.Equal(0, f.Pagination.Offset)
+			s.Equal(10, f.Pagination.Limit)
+			s.Empty(f.CategoryCode)
+			s.Nil(f.PriceLessThan)
 			return sampleProducts(), int64(2), nil
 		})
 
@@ -62,10 +64,10 @@ func (s *CatalogHandlerSuite) TestGetCatalog_DefaultPagination() {
 
 func (s *CatalogHandlerSuite) TestGetCatalog_CustomPagination() {
 	s.mock.EXPECT().
-		GetProducts(gomock.Any()).
-		DoAndReturn(func(filter *models.ProductFilter) ([]models.Product, int64, error) {
-			assert.Equal(s.T(), 5, filter.Pagination.Offset)
-			assert.Equal(s.T(), 20, filter.Pagination.Limit)
+		GetProducts(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+			s.Equal(5, f.Pagination.Offset)
+			s.Equal(20, f.Pagination.Limit)
 			return sampleProducts(), int64(2), nil
 		})
 
@@ -90,9 +92,11 @@ func (s *CatalogHandlerSuite) TestGetCatalog_InvalidLimit() {
 
 func (s *CatalogHandlerSuite) TestGetCatalog_CategoryFilter() {
 	s.mock.EXPECT().
-		GetProducts(gomock.Any()).
-		DoAndReturn(func(filter *models.ProductFilter) ([]models.Product, int64, error) {
-			assert.Equal(s.T(), "shoes", filter.CategoryCode)
+		GetProducts(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+			s.Equal("shoes", f.CategoryCode)
+			s.Equal(0, f.Pagination.Offset)
+			s.Equal(10, f.Pagination.Limit)
 			return nil, int64(0), nil
 		})
 
@@ -105,10 +109,10 @@ func (s *CatalogHandlerSuite) TestGetCatalog_CategoryFilter() {
 
 func (s *CatalogHandlerSuite) TestGetCatalog_PriceLessThanFilter() {
 	s.mock.EXPECT().
-		GetProducts(gomock.Any()).
-		DoAndReturn(func(filter *models.ProductFilter) ([]models.Product, int64, error) {
-			expected := decimal.NewFromInt(10)
-			assert.True(s.T(), expected.Equal(*filter.PriceLessThan))
+		GetProducts(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+			s.Require().NotNil(f.PriceLessThan)
+			s.True(decimal.NewFromInt(10).Equal(*f.PriceLessThan))
 			return nil, int64(0), nil
 		})
 
@@ -121,8 +125,10 @@ func (s *CatalogHandlerSuite) TestGetCatalog_PriceLessThanFilter() {
 
 func (s *CatalogHandlerSuite) TestGetCatalog_ResponseIncludesTotalAndCategory() {
 	s.mock.EXPECT().
-		GetProducts(gomock.Any()).
-		Return(sampleProducts(), int64(42), nil)
+		GetProducts(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+			return sampleProducts(), int64(42), nil
+		})
 
 	req := httptest.NewRequest(http.MethodGet, "/catalog", nil)
 	rec := httptest.NewRecorder()
@@ -137,15 +143,17 @@ func (s *CatalogHandlerSuite) TestGetCatalog_ResponseIncludesTotalAndCategory() 
 
 func (s *CatalogHandlerSuite) TestGetCatalog_RepositoryError() {
 	s.mock.EXPECT().
-		GetProducts(gomock.Any()).
-		Return(nil, int64(0), errors.New("db down"))
+		GetProducts(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, f *models.ProductFilter) ([]models.Product, int64, error) {
+			return nil, int64(0), errors.New("db down")
+		})
 
 	req := httptest.NewRequest(http.MethodGet, "/catalog", nil)
 	rec := httptest.NewRecorder()
 	s.handler.HandleGetCatalog(rec, req)
 
 	s.Equal(http.StatusInternalServerError, rec.Code)
-	s.Contains(rec.Body.String(), `"error":"db down"`)
+	s.Contains(rec.Body.String(), `"error":"internal server error"`)
 }
 
 func (s *CatalogHandlerSuite) TestGetCatalog_InvalidPriceLessThan() {
@@ -177,8 +185,11 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_Success() {
 	}
 
 	s.mock.EXPECT().
-		GetProductDetails("PROD001").
-		Return(product, nil)
+		GetProductDetails(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, code string) (*models.Product, error) {
+			s.Equal("PROD001", code)
+			return product, nil
+		})
 
 	req := httptest.NewRequest(http.MethodGet, "/catalog/PROD001", nil)
 	req.SetPathValue("code", "PROD001")
@@ -204,8 +215,11 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_VariantPrices() {
 	}
 
 	s.mock.EXPECT().
-		GetProductDetails("PROD001").
-		Return(product, nil)
+		GetProductDetails(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, code string) (*models.Product, error) {
+			s.Equal("PROD001", code)
+			return product, nil
+		})
 
 	req := httptest.NewRequest(http.MethodGet, "/catalog/PROD001", nil)
 	req.SetPathValue("code", "PROD001")
@@ -220,8 +234,11 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_VariantPrices() {
 
 func (s *CatalogHandlerSuite) TestGetProductDetails_NotFound() {
 	s.mock.EXPECT().
-		GetProductDetails("INVALID").
-		Return(nil, apperrors.ErrProductNotFound)
+		GetProductDetails(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, code string) (*models.Product, error) {
+			s.Equal("INVALID", code)
+			return nil, apperrors.ErrProductNotFound
+		})
 
 	req := httptest.NewRequest(http.MethodGet, "/catalog/INVALID", nil)
 	req.SetPathValue("code", "INVALID")
@@ -234,8 +251,11 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_NotFound() {
 
 func (s *CatalogHandlerSuite) TestGetProductDetails_InternalError() {
 	s.mock.EXPECT().
-		GetProductDetails("PROD001").
-		Return(nil, errors.New("db down"))
+		GetProductDetails(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, code string) (*models.Product, error) {
+			s.Equal("PROD001", code)
+			return nil, errors.New("db down")
+		})
 
 	req := httptest.NewRequest(http.MethodGet, "/catalog/PROD001", nil)
 	req.SetPathValue("code", "PROD001")
@@ -243,5 +263,15 @@ func (s *CatalogHandlerSuite) TestGetProductDetails_InternalError() {
 	s.handler.HandleGetProductDetails(rec, req)
 
 	s.Equal(http.StatusInternalServerError, rec.Code)
-	s.Contains(rec.Body.String(), `"error":"db down"`)
+	s.Contains(rec.Body.String(), `"error":"internal server error"`)
+}
+
+func (s *CatalogHandlerSuite) TestGetProductDetails_EmptyCode() {
+	req := httptest.NewRequest(http.MethodGet, "/catalog/", nil)
+	req.SetPathValue("code", "")
+	rec := httptest.NewRecorder()
+	s.handler.HandleGetProductDetails(rec, req)
+
+	s.Equal(http.StatusBadRequest, rec.Code)
+	s.Contains(rec.Body.String(), `"error":"product code is required"`)
 }

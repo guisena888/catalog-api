@@ -57,3 +57,15 @@ func toVariantResponse(v models.Variant) VariantResponse {
 		Price: v.Price.InexactFloat64(),
 	}
 }
+
+type CategoryResponse struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+}
+
+func toCategoryResponse(c models.Category) CategoryResponse {
+	return CategoryResponse{
+		Code: c.Code,
+		Name: c.Name,
+	}
+}

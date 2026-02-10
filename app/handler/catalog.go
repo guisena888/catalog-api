@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/mytheresa/go-hiring-challenge/app/api"
@@ -21,15 +20,14 @@ func NewCatalogHandler(s ProductService) *CatalogHandler {
 
 func (h *CatalogHandler) HandleGetCatalog(w http.ResponseWriter, r *http.Request) {
 	filter := new(models.ProductFilter)
-	err := filter.Parse(r)
-	if err != nil {
-		api.ErrorResponse(w, http.StatusBadRequest, err.Error())
+	if err := filter.Parse(r); err != nil {
+		api.HandleError(w, err)
 		return
 	}
 
-	res, total, err := h.products.GetProducts(filter)
+	res, total, err := h.products.GetProducts(r.Context(), filter)
 	if err != nil {
-		api.ErrorResponse(w, http.StatusInternalServerError, err.Error())
+		api.HandleError(w, err)
 		return
 	}
 
@@ -46,14 +44,14 @@ func (h *CatalogHandler) HandleGetCatalog(w http.ResponseWriter, r *http.Request
 
 func (h *CatalogHandler) HandleGetProductDetails(w http.ResponseWriter, r *http.Request) {
 	code := r.PathValue("code")
+	if code == "" {
+		api.HandleError(w, apperrors.ErrMissingProductCode)
+		return
+	}
 
-	product, err := h.products.GetProductDetails(code)
+	product, err := h.products.GetProductDetails(r.Context(), code)
 	if err != nil {
-		if errors.Is(err, apperrors.ErrProductNotFound) {
-			api.ErrorResponse(w, http.StatusNotFound, err.Error())
-			return
-		}
-		api.ErrorResponse(w, http.StatusInternalServerError, err.Error())
+		api.HandleError(w, err)
 		return
 	}
 
